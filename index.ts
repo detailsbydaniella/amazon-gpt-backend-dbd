@@ -1,5 +1,5 @@
 import express from "express";
-import { Configuration, DefaultApi, SearchItemsRequest } from "paapi5-nodejs-sdk";
+import { Configuration, DefaultApi } from "paapi5-nodejs-sdk";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
