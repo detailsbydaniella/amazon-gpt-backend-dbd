@@ -1,5 +1,6 @@
 import express from "express";
-import { Configuration, DefaultApi } from "paapi5-nodejs-sdk";
+import pkg from "paapi5-nodejs-sdk";
+const { Configuration, DefaultApi } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
