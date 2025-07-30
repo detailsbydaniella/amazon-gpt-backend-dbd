@@ -1,11 +1,10 @@
 import express from "express";
-import pkg from "paapi5-nodejs-sdk";
-const { Configuration, DefaultApi } = pkg;
+import paapi from "paapi5-nodejs-sdk";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const config = new Configuration({
+const config = new paapi.Configuration({
   accessKey: process.env.AMAZON_ACCESS_KEY!,
   secretKey: process.env.AMAZON_SECRET_KEY!,
   partnerTag: process.env.AMAZON_ASSOCIATE_TAG!,
@@ -13,7 +12,7 @@ const config = new Configuration({
   marketplace: "www.amazon.com"
 });
 
-const amazonApi = new DefaultApi(config);
+const amazonApi = new paapi.DefaultApi(config);
 
 app.get("/", (req, res) => {
   res.send("Amazon GPT backend using official SDK is running.");
@@ -38,7 +37,6 @@ app.get("/search", async (req, res) => {
     };
 
     const response = await amazonApi.searchItems(request);
-
     const items = response?.searchResult?.items || [];
 
     const results = items.slice(0, 5).map((item: any) => ({
