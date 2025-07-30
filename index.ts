@@ -1,7 +1,6 @@
 import express from "express";
 import axios from "axios";
 import crypto from "crypto";
-import qs from "querystring";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +10,7 @@ const SECRET_KEY = process.env.AMAZON_SECRET_KEY!;
 const ASSOCIATE_TAG = process.env.AMAZON_ASSOCIATE_TAG!;
 
 app.get("/", (req, res) => {
-  res.send("Amazon GPT backend with real products is running.");
+  res.send("Amazon GPT backend is running.");
 });
 
 app.get("/search", async (req, res) => {
@@ -30,6 +29,7 @@ app.get("/search", async (req, res) => {
         "ItemInfo.Title",
         "Offers.Listings.Price",
         "Images.Primary.Medium",
+        "DetailPageURL"
       ],
       PartnerTag: ASSOCIATE_TAG,
       PartnerType: "Associates",
@@ -46,14 +46,11 @@ app.get("/search", async (req, res) => {
       "x-amz-target": "com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems",
     };
 
-    // Create canonical request
     const canonicalHeaders = `content-encoding:${headers["content-encoding"]}\ncontent-type:${headers["content-type"]}\nhost:${headers["host"]}\nx-amz-date:${headers["x-amz-date"]}\nx-amz-target:${headers["x-amz-target"]}\n`;
     const signedHeaders = "content-encoding;content-type;host;x-amz-date;x-amz-target";
     const hashedPayload = crypto.createHash("sha256").update(jsonPayload).digest("hex");
 
     const canonicalRequest = `POST\n${uri}\n\n${canonicalHeaders}\n${signedHeaders}\n${hashedPayload}`;
-
-    // Create string to sign
     const date = currentTimestamp.slice(0, 8);
     const region = "us-east-1";
     const service = "ProductAdvertisingAPI";
@@ -64,7 +61,6 @@ app.get("/search", async (req, res) => {
       .update(canonicalRequest)
       .digest("hex")}`;
 
-    // Generate signing key
     const kDate = crypto
       .createHmac("sha256", "AWS4" + SECRET_KEY)
       .update(date)
@@ -72,14 +68,8 @@ app.get("/search", async (req, res) => {
     const kRegion = crypto.createHmac("sha256", kDate).update(region).digest();
     const kService = crypto.createHmac("sha256", kRegion).update(service).digest();
     const kSigning = crypto.createHmac("sha256", kService).update("aws4_request").digest();
+    const signature = crypto.createHmac("sha256", kSigning).update(stringToSign).digest("hex");
 
-    // Sign the string
-    const signature = crypto
-      .createHmac("sha256", kSigning)
-      .update(stringToSign)
-      .digest("hex");
-
-    // Build authorization header
     const authorizationHeader = `AWS4-HMAC-SHA256 Credential=${ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
     const response = await axios.post(`https://${endpoint}${uri}`, jsonPayload, {
@@ -99,8 +89,11 @@ app.get("/search", async (req, res) => {
 
     res.json({ query, results });
   } catch (err: any) {
-    console.error(err?.response?.data || err.message);
-    res.status(500).json({ error: "Failed to fetch products from Amazon." });
+    console.error("Amazon API error:", err?.response?.data || err.message);
+    res.status(500).json({
+      error: "Failed to fetch products from Amazon.",
+      details: err?.response?.data || err.message,
+    });
   }
 });
 
