@@ -25,7 +25,7 @@ app.get("/search", async (req, res) => {
   }
 
   try {
-    const request: SearchItemsRequest = {
+    const request = {
       keywords: query,
       resources: [
         "ItemInfo.Title",
